@@ -1,3 +1,13 @@
+## Features
+
+* Book a certain time range outside of the allowed timeframe (30 days into the future)
+  > Currently requiers to manually input the start and endtime; weekends and off-days aren't treated properly
+
+## Planned Features
+
+* Automatically Accept booking
+* Proper CLI for easy of use
+
 ## Usage
 
 Create a `config.json`, for example:
