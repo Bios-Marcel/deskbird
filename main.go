@@ -9,8 +9,10 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/Bios-Marcel/deskbird/auth"
 	"github.com/Bios-Marcel/yagcl"
 	yagcl_json "github.com/Bios-Marcel/yagcl-json"
+	"github.com/docker/distribution/registry/client/auth"
 )
 
 var (
@@ -50,8 +52,6 @@ func must[T any](t T, err error) T {
 }
 
 type Config struct {
-	BearerToken string `key:"bearer_token"`
-
 	// WorkspaceId is a building, for example "Loft"
 	WorkspaceId string `key:"workspace_id"`
 	// ResourceId is a subpart of a building, for example "Loft Meetingpoint"
@@ -61,10 +61,15 @@ type Config struct {
 }
 
 func main() {
+	bearerToken, err := auth.RetrieveBearerToken()
+	if err != nil {
+		panic(err)
+	}
+
 	var conf Config
 	err := yagcl.
 		New[Config]().
-		Add(yagcl_json.Source().String("config.json")).
+		Add(yagcl_json.Source().Path("config.json")).
 		Parse(&conf)
 	if err != nil {
 		panic(err)
@@ -72,10 +77,15 @@ func main() {
 
 	var body PostBookingsBody
 
-	startDay := must(time.Parse(time.RFC3339, "2022-11-23T08:00:00Z"))
-	endDay := must(time.Parse(time.RFC3339, "2022-11-25T08:00:00Z"))
+	startDay := must(time.Parse(time.RFC3339, "2022-11-06T08:00:00Z"))
+	endDay := must(time.Parse(time.RFC3339, "2022-11-07T08:00:00Z"))
 
 	for nextStart := startDay; !nextStart.After(endDay); nextStart = nextStart.Add(24 * time.Hour) {
+		// We ain't working during weekdays.
+		if weekday := nextStart.Weekday(); weekday == time.Saturday || weekday == time.Sunday {
+			continue
+		}
+
 		nextEnd := nextStart.Add(12 * time.Hour)
 		booking := Booking{
 			Internal:  true,
@@ -103,7 +113,7 @@ func main() {
 			must(url.JoinPath(BaseURL, APIVersion, EndpointMultiDaBooking)),
 			bytes.NewReader(requestBodyBytes)))
 
-	request.Header.Add("Authorization", conf.BearerToken)
+	request.Header.Add("Authorization", bearerToken)
 	request.Header.Add("Content-Type", "application/json")
 	request.Header.Add("Content-Length", fmt.Sprintf("%d", len(requestBodyBytes)))
 	request.Header.Add("Accept", "application/json, text/plain, */*")
