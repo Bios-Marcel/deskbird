@@ -67,7 +67,7 @@ func main() {
 	}
 
 	var conf Config
-	err := yagcl.
+	err = yagcl.
 		New[Config]().
 		Add(yagcl_json.Source().Path("config.json")).
 		Parse(&conf)
@@ -81,7 +81,7 @@ func main() {
 	endDay := must(time.Parse(time.RFC3339, "2022-11-07T08:00:00Z"))
 
 	for nextStart := startDay; !nextStart.After(endDay); nextStart = nextStart.Add(24 * time.Hour) {
-		// We ain't working during weekdays.
+		// We ain't working during weekends.
 		if weekday := nextStart.Weekday(); weekday == time.Saturday || weekday == time.Sunday {
 			continue
 		}
